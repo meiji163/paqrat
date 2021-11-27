@@ -1,13 +1,13 @@
-package main
+package estimator
 
 type Estimator interface{
-	predict() float32
-	update(bool)
+	Predict() float32
+	Update(bool)
 }
 
 type Context8 struct{
-	b byte
-	c byte
+	Cur byte
+	Last byte
 }
 
 type Counter struct{
@@ -15,19 +15,19 @@ type Counter struct{
 }
 
 type Estimator8 struct{
-	freq map[Context8]Counter
-	ctxt Context8
+	Freq map[Context8]Counter
+	Ctxt Context8
 	nbits int
 }
 
-func newEstimator8() *Estimator8 {
+func NewEstimator8() *Estimator8 {
 	var E Estimator8
-	E.freq = make(map[Context8]Counter)
+	E.Freq = make(map[Context8]Counter)
 	return &E
 }
 
-func (E *Estimator8) predict() float32{
-	ctr, ok := E.freq[E.ctxt]
+func (E *Estimator8) Predict() float32{
+	ctr, ok := E.Freq[E.Ctxt]
 	if ok {
 		return (float32(ctr.n1)+1)/(float32(ctr.n0)+float32(ctr.n1)+2)
 	}else{
@@ -42,24 +42,24 @@ func btoi(b bool) uint8 {
     return 0
  }
 
-func (E *Estimator8) update(bit bool) {
-	ctr, ok := E.freq[E.ctxt]
+func (E *Estimator8) Update(bit bool) {
+	ctr, ok := E.Freq[E.Ctxt]
 	if !ok {
 		ctr = Counter{0,0}
 	}
-	ctr.increment(bit)
-	E.freq[E.ctxt] = ctr
+	ctr.Increment(bit)
+	E.Freq[E.Ctxt] = ctr
 
 	if E.nbits >= 8{
-		c := E.ctxt.c
-		E.ctxt = Context8{c,0}
+		last_byte := E.Ctxt.Last
+		E.Ctxt = Context8{last_byte,0}
 		E.nbits = 0
 	}
-	E.ctxt.c = 2*E.ctxt.c + btoi(bit)
+	E.Ctxt.Cur = 2*E.Ctxt.Cur + btoi(bit)
 	E.nbits++
 }
 
-func (ctr *Counter) increment(bit bool){
+func (ctr *Counter) Increment(bit bool){
 	if bit {
 		ctr.n1++
 		if ctr.n0 > 2 {
